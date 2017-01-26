@@ -237,6 +237,12 @@ class DigitalOceanVolume(object):
     def mount_volume(self):
         logger.debug('Mounting {} to {} on droplet {}'.format(self.device_name, self.mount_point, droplet.id))
         try:
+            mountpoint('-q', self.mount_point)
+            logger.debug('Something already mounted at {}'.format(self.mount_point))
+            return True
+        except ErrorReturnCode:
+            pass
+        try:
             logger.debug('Waiting a bit to for disk to be attached')
             sleep(5)
             ls('-l', self.device_name)
