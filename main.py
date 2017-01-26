@@ -165,20 +165,22 @@ class DigitalOceanVolume(object):
             logger.debug('HTTP response: {}'.format(r.text))
             return False
 
-    def detach_from_droplet(self):
+    def detach_from_droplet(self, droplet_id=None):
+        if not droplet_id:
+            droplet_id = droplet.id
         do_data = {
             'type': 'detach',
-            'droplet_id': droplet.id,
+            'droplet_id': droplet_id,
             'region': self.region
         }
-        logger.debug('Detaching volume {}({}) from droplet {} - {}'.format(self.name, self.id, droplet.id,
+        logger.debug('Detaching volume {}({}) from droplet {} - {}'.format(self.name, self.id, droplet_id,
                                                                            do_data))
         r = requests.post(do_url+'/volumes/'+self.id+'/actions', headers=do_header, json=do_data)
         if r.status_code in [200, 201, 202, 204]:
-            logger.debug('Volume {} was detached from {} in Digital Ocean'.format(self.name, droplet.id))
+            logger.debug('Volume {} was detached from {} in Digital Ocean'.format(self.name, droplet_id))
             return True
         else:
-            logger.error('Failed to detach volume {} from droplet {}'.format(self.name, droplet.id))
+            logger.error('Failed to detach volume {} from droplet {}'.format(self.name, droplet_id))
             logger.debug('HTTP status: {}'.format(r.status_code))
             logger.debug('HTTP response: {}'.format(r.text))
             return False
@@ -209,7 +211,7 @@ class DigitalOceanVolume(object):
                     except requests.ConnectionError:
                         logger.error('Failed to connect to {}. Check Remora API is running there.'.
                                      format(tmp_droplet.public_ip_address))
-                        return False
+                        return self.detach_from_droplet(tmp_droplet.id)
                 else:
                     logger.error('Failed to connect to {}. Check Remora API is running there.'.format(ip_address))
                     return False
